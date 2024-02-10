@@ -36,36 +36,19 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var fast_xml_parser_1 = require("fast-xml-parser");
-var ADVISORY_URL = "https://cadatacatalog.state.gov/dataset/4a387c35-29cb-4902-b91d-3da0dc02e4b2/resource/4c727464-8e6f-4536-b0a5-0a343dc6c7ff/download/traveladvisory.xml";
-function getData() {
+var maplibre_gl_1 = require("maplibre-gl");
+function onLoadPage() {
     return __awaiter(this, void 0, void 0, function () {
-        var advisoryResponse, advisoryXml, parser, advisories;
+        var map;
         return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, fetch(ADVISORY_URL)];
-                case 1:
-                    advisoryResponse = _a.sent();
-                    return [4 /*yield*/, advisoryResponse.text()];
-                case 2:
-                    advisoryXml = _a.sent();
-                    parser = new fast_xml_parser_1.XMLParser();
-                    advisories = parser.parse(advisoryXml);
-                    return [2 /*return*/, advisories];
-            }
+            map = new maplibre_gl_1.default.Map({
+                container: 'map',
+                style: 'https://api.maptiler.com/maps/basic-v2/style.json?key=tCPs0pg6r8mncTKFtDd1', // stylesheet location
+                center: [-5.35, 32.14], // starting position [lng, lat]
+                zoom: 1 // starting zoom
+            });
+            return [2 /*return*/];
         });
     });
 }
-function transformData(advisories) {
-    return advisories.map(function (advisory) { return ({
-        name: advisory.title.split(" - ")[0],
-        level: parseInt(advisory.title.split(" - ")[1].replace(/Level (\d):.*/, "$1")),
-        link: advisory.id,
-        summary: advisory.summary,
-        published: advisory.published,
-        updated: advisory.updated,
-    }); });
-}
-getData()
-    .then(function (advisories) { return transformData(advisories.feed.entry); })
-    .then(function (advisories) { return console.log(advisories); });
+window.onload = onLoadPage;
