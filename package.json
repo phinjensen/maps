@@ -4,8 +4,12 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
+    "@types/shapefile": "^0.6.4",
+    "@types/yauzl": "^2.10.3",
     "parcel": "^2.11.0",
-    "typescript": "^5.3.3"
+    "shapefile": "^0.6.6",
+    "typescript": "^5.3.3",
+    "yauzl": "^2.10.0"
   },
   "dependencies": {
     "fast-xml-parser": "^4.3.4",
