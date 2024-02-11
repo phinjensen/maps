@@ -1,3 +1,11 @@
+:root {
+  font-family: Inter, sans-serif;
+  font-feature-settings: 'liga' 1, 'calt' 1; /* fix for Chrome */
+}
+@supports (font-variation-settings: normal) {
+  :root { font-family: InterVariable, sans-serif; }
+}
+
 body {
   margin: 0;
 }
@@ -11,10 +19,55 @@ body {
 
 #sidebar {
   flex: 1 0 20%;
-  min-width: 200px;
-  max-width: 300px;
+  min-width: 24em;
+  max-width: 32em;
+  padding: 1em;
+  overflow: auto;
+}
+
+#sidebar h2 {
+  font-size: 2em;
+}
+
+#sidebar h3 {
+  font-size: 1.2em;
+}
+
+#sidebar h2, h3 {
+  margin: 0.5em 0;
+}
+
+#sidebar ul {
+  padding-left: 2em;
+}
+
+.level-chip {
+  padding: 0.25em 0.5em;
+  border-radius: 0.25em;
+  line-height: 2;
+  margin-right: 0.4em;
+  color: white;
+  font-feature-settings: 'tnum';
+}
+
+.level-chip.level-1 {
+  background-color: #2ecc71;
+}
+
+.level-chip.level-2 {
+  background-color: #f1c40f;
+}
+
+.level-chip.level-3 {
+  background-color: #e67e22;
+}
+
+.level-chip.level-4 {
+  background-color: #e74c3c;
 }
 
 #map {
-  flex: 4 0 80%;
+  flex: 4 1 80%;
 }
+
+
