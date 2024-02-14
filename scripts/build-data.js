@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -46,6 +35,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var fast_xml_parser_1 = require("fast-xml-parser");
 var fs_1 = require("fs");
@@ -53,6 +51,19 @@ var shapefile_1 = require("shapefile");
 var yauzl_1 = require("yauzl");
 var ADVISORY_URL = "https://cadatacatalog.state.gov/dataset/4a387c35-29cb-4902-b91d-3da0dc02e4b2/resource/4c727464-8e6f-4536-b0a5-0a343dc6c7ff/download/traveladvisory.xml";
 var NATURAL_EARTH_URL = "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_0_countries.zip";
+var LOOKUPS = {
+    "Burma (Myanmar)": "Myanmar",
+    "Eswatini": "eSwatini",
+    "Cote d Ivoire": "Ivory Coast",
+    "The Gambia": "Gambia",
+    "Czech Republic": "Czechia",
+    "Kingdom of Denmark": "Denmark",
+    "See Summaries": "China",
+    "Serbia": "Republic of Serbia",
+    "Timor-Leste": "East Timor",
+    "Micronesia": "Federated States of Micronesia",
+    "Sao Tome and Principe": "São Tomé and Principe",
+};
 function getStateDepartmentData() {
     return __awaiter(this, void 0, void 0, function () {
         var advisoryResponse, advisoryXml, parser, advisories;
@@ -107,32 +118,21 @@ function getNaturalEarthData() {
                                     zipfile.readEntry();
                                 });
                                 zipfile.on("end", function () {
-                                    (0, shapefile_1.open)(shpStream, dbfStream).then(function (source) { return __awaiter(_this, void 0, void 0, function () {
-                                        var features, entry, feature;
-                                        return __generator(this, function (_a) {
-                                            switch (_a.label) {
-                                                case 0:
-                                                    features = [];
-                                                    return [4 /*yield*/, source.read()];
-                                                case 1:
-                                                    entry = _a.sent();
-                                                    _a.label = 2;
-                                                case 2:
-                                                    if (!!entry.done) return [3 /*break*/, 4];
-                                                    if (entry.value) {
-                                                        feature = entry.value;
-                                                        if (feature.properties)
-                                                            feature.properties = { name: feature.properties.SOVEREIGNT.replace(/\0/g, '') };
-                                                        features.push(feature);
-                                                    }
-                                                    return [4 /*yield*/, source.read()];
-                                                case 3:
-                                                    entry = _a.sent();
-                                                    return [3 /*break*/, 2];
-                                                case 4:
-                                                    resolve(features);
-                                                    return [2 /*return*/];
+                                    (0, shapefile_1.read)(shpStream, dbfStream, { encoding: "UTF-8" }).then(function (source) { return __awaiter(_this, void 0, void 0, function () {
+                                        var _i, _a, feature;
+                                        return __generator(this, function (_b) {
+                                            for (_i = 0, _a = source.features; _i < _a.length; _i++) {
+                                                feature = _a[_i];
+                                                if (feature.properties) {
+                                                    feature.properties = {
+                                                        names: feature.properties.NAME.replace(/\0/g, '').trim(),
+                                                        geounit: feature.properties.GEOUNIT.replace(/\0/g, '').trim(),
+                                                        sovereign: feature.properties.SOVEREIGNT.replace(/\0/g, '').trim()
+                                                    };
+                                                }
                                             }
+                                            resolve(source.features);
+                                            return [2 /*return*/];
                                         });
                                     }); });
                                 });
@@ -144,33 +144,61 @@ function getNaturalEarthData() {
     });
 }
 function transformData(advisories) {
-    return advisories.map(function (advisory) { return ({
-        name: advisory.title.split(" - ")[0],
-        level: parseInt(advisory.title.split(" - ")[1].replace(/Level (\d):.*/, "$1")),
-        link: advisory.id,
-        summary: advisory.summary,
-        published: advisory.published,
-        updated: advisory.updated,
-    }); });
-}
-Promise.all([
-    getNaturalEarthData(),
-    getStateDepartmentData()
-        .then(function (advisories) { return transformData(advisories.feed.entry).reduce(function (obj, cur) {
-        var _a;
-        return (__assign((_a = {}, _a[cur.name] = cur, _a), obj));
-    }, {}); })
-]).then(function (_a) {
-    var geometry = _a[0], advisories = _a[1];
-    for (var _i = 0, geometry_1 = geometry; _i < geometry_1.length; _i++) {
-        var country = geometry_1[_i];
-        var advisory = advisories[country.properties.name];
-        if (advisory) {
-            country.properties = advisory;
+    return advisories.map(function (advisory) {
+        var name, level;
+        if (advisory.title.startsWith("See Summaries - Mainland China")) {
+            name = "China";
+            level = advisory.title.split(" - ")[2];
+        }
+        else if (advisory.title.startsWith("See Individual Summaries")) {
+            name = "Israel";
+            level = advisory.title.split(" - ")[1];
         }
         else {
-            console.error("couldn't find match for", country.properties.name);
+            name = advisory.title.split(" - ")[0];
+            level = advisory.title.split(" - ")[1];
+        }
+        level = level.replace(/Level (\d):.*/, "$1");
+        return {
+            name: name,
+            level: parseInt(level),
+            link: advisory.id,
+            summary: advisory.summary,
+            published: advisory.published,
+            updated: advisory.updated,
+        };
+    });
+}
+Promise.all([
+    getNaturalEarthData().then(function (features) { return features.reduce(function (obj, cur) {
+        var name = cur.properties.name;
+        var geounit = cur.properties.geounit;
+        var sovereign = cur.properties.sovereign;
+        obj.name[name] = __spreadArray(__spreadArray([], (obj.name[name] || []), true), [cur], false);
+        obj.geounit[geounit] = __spreadArray(__spreadArray([], (obj.geounit[geounit] || []), true), [cur], false);
+        obj.sovereign[sovereign] = __spreadArray(__spreadArray([], (obj.sovereign[sovereign] || []), true), [cur], false);
+        return obj;
+    }, { name: {}, geounit: {}, sovereign: {} }); }),
+    getStateDepartmentData()
+        .then(function (advisories) { return transformData(advisories.feed.entry); })
+]).then(function (_a) {
+    var geometry = _a[0], advisories = _a[1];
+    var features = [];
+    for (var _i = 0, advisories_1 = advisories; _i < advisories_1.length; _i++) {
+        var area = advisories_1[_i];
+        var name_1 = (LOOKUPS[area.name] || area.name).trim();
+        var match = geometry.name[name_1] || geometry.geounit[name_1] || geometry.sovereign[name_1];
+        if (match) {
+            if (match.length > 1) {
+                console.error("Found multiple matches for", name_1);
+            }
+            var feature = match[0];
+            feature.properties = area;
+            features.push(feature);
+        }
+        else {
+            console.error("couldn't find match for \"" + name_1 + "\"");
         }
     }
-    (0, fs_1.writeFileSync)('countries-with-advisories.json', JSON.stringify({ type: 'FeatureCollection', features: geometry }));
+    (0, fs_1.writeFileSync)('src/countries-with-advisories.json', JSON.stringify({ type: 'FeatureCollection', features: features }));
 });
