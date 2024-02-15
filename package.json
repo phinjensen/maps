@@ -3,6 +3,7 @@
     "build": "ls"
   },
   "devDependencies": {
+    "@types/geojson": "^7946.0.14",
     "@types/node": "^20.11.17",
     "@types/shapefile": "^0.6.4",
     "@types/yauzl": "^2.10.3",
