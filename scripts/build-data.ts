@@ -1,7 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 import { writeFileSync } from "fs";
 import { FeatureCollection } from "geojson";
-import { Source, read as readShapefile } from "shapefile";
+import { read as readShapefile } from "shapefile";
 import { fromBuffer as unzipBuffer } from "yauzl";
 
 const ADVISORY_URL =
@@ -143,14 +143,15 @@ function transformData(advisories: StateDepartmentAdvisory[]): Advisory[] {
       name = advisory.title.split(" - ")[0];
       level = advisory.title.split(" - ")[1];
     }
-    level = level.replace(/Level (\d):.*/, "$1");
+    level = parseInt(level.replace(/Level (\d):.*/, "$1"));
     return {
       name,
-      level: parseInt(level),
+      level: level,
       link: advisory.id,
       summary: advisory.summary,
       published: advisory.published,
       updated: advisory.updated,
+      increasedRiskInAreas: advisory.summary.includes("increased risk"),
     }
   });
 }
@@ -177,7 +178,8 @@ Promise.all([
             name,
             level: LEVEL_TEXT_TO_NUMBER[summary.replace(/.*(\s|&nbsp;)– ([A-Za-z ]+)<\/u>.*/, "$2")],
             summary: summary.substring(summary.indexOf("</u></b></p>") + "</u></b></p>".length),
-            link: area.link
+            link: area.link,
+            increasedRiskInAreas: false,
           };
           features.push(match);
         } else {

@@ -16,7 +16,7 @@ async function onLoadPage() {
     center: [-5.35, 32.14], // starting position [lng, lat]
     zoom: 1 // starting zoom
   });
-  map.on('load', () => {
+  map.on('load', async () => {
     const sidebarContent = document.getElementById("sidebar")?.innerHTML;
     const layers = map.getStyle().layers;
     // Find the index of the first symbol layer in the map style
@@ -30,24 +30,40 @@ async function onLoadPage() {
 
     map.addSource('countries', { type: 'geojson', data: advisoryData as any });
 
+    let image = await map.loadImage(new URL(`images/level-1.png`, import.meta.url).toString());
+    map.addImage('pattern1', image.data);
+    image = await map.loadImage(new URL(`images/level-1.5.png`, import.meta.url).toString());
+    map.addImage('pattern1.5', image.data);
+    image = await map.loadImage(new URL(`images/level-2.png`, import.meta.url).toString());
+    map.addImage('pattern2', image.data);
+    image = await map.loadImage(new URL(`images/level-2.5.png`, import.meta.url).toString());
+    map.addImage('pattern2.5', image.data);
+    image = await map.loadImage(new URL(`images/level-3.png`, import.meta.url).toString());
+    map.addImage('pattern3', image.data);
+    image = await map.loadImage(new URL(`images/level-3.5.png`, import.meta.url).toString());
+    map.addImage('pattern3.5', image.data);
+    image = await map.loadImage(new URL(`images/level-4.png`, import.meta.url).toString());
+    map.addImage('pattern4', image.data);
+
     map.addLayer({
       'id': 'countries',
       'type': 'fill',
       'source': 'countries',
-      'layout': {},
       'paint': {
-        'fill-color': [
-          'case',
-          ['==', ['get', 'level'], 1], '#2ecc71',
-          ['==', ['get', 'level'], 2], '#f1c40f',
-          ['==', ['get', 'level'], 3], '#e67e22',
-          ['==', ['get', 'level'], 4], '#e74c3c',
-          '#222',
+        'fill-pattern': [
+          'match', ['concat', ['get', 'level'], ['get', 'increasedRiskInAreas']],
+          '1false', 'pattern1',
+          '1true', 'pattern1.5',
+          '2false', 'pattern2',
+          '2true', 'pattern2.5',
+          '3false', 'pattern3',
+          '3true', 'pattern3.5',
+          '4false', 'pattern4',
+          'none',
         ],
-        'fill-opacity': 0.8
+        'fill-opacity': 0.8,
       }
     }, firstSymbolId);
-
 
     // When a click event occurs on a feature in the states layer, open a popup at the
     // location of the click, with description HTML from its properties.
