@@ -61,8 +61,9 @@ var fs_1 = require("fs");
 var shapefile_1 = require("shapefile");
 var yauzl_1 = require("yauzl");
 var ADVISORY_URL = "https://cadatacatalog.state.gov/dataset/4a387c35-29cb-4902-b91d-3da0dc02e4b2/resource/4c727464-8e6f-4536-b0a5-0a343dc6c7ff/download/traveladvisory.xml";
-var NATURAL_EARTH_URL = "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_0_countries.zip";
-var MEXICAN_STATES_URL = "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces.zip";
+var NATURAL_EARTH_URL = "https://naciscdn.org/naturalearth/50m/cultural/ne_50m_admin_0_countries.zip";
+var MEXICAN_STATES_URL = "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_1_states_provinces.zip";
+// Map state department data to country and state name in shapefile data
 var LOOKUPS = {
     "Burma (Myanmar)": "Myanmar",
     "Eswatini": "eSwatini",
@@ -86,12 +87,16 @@ var MEXICO_LOOKUPS = {
     "Mexico City": "Distrito Federal",
     "Mexico State": "México",
 };
+// Map advisory level name to number
 var LEVEL_TEXT_TO_NUMBER = {
     "Exercise Normal Precautions": 1,
     "Exercise Increased Caution": 2,
     "Reconsider Travel": 3,
     "Do Not Travel": 4
 };
+/**
+ * Remove null characters in a string. Some strings in the shapefile data have null characters padding them out, so this takes care of those.
+ */
 function fix_null_string(s) {
     return s.replace(/\0/g, '').trim();
 }
@@ -116,6 +121,9 @@ function getStateDepartmentData() {
         });
     });
 }
+/**
+ * Helper function to read a shapefile from a ZIP and build a GeoJSON feature collection.
+ */
 function readShapefileZip(buffer) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
@@ -154,7 +162,9 @@ function readShapefileZip(buffer) {
         });
     });
 }
-/** Fetch, parse, and organize sovereign countries from https://www.naturalearthdata.com/ by name */
+/**
+ * Fetch, parse, and organize sovereign countries from https://www.naturalearthdata.com/ by name
+ */
 function getNaturalEarthData() {
     return __awaiter(this, void 0, void 0, function () {
         var naturalEarthResponse, naturalEarthBuffer, collection, _i, _a, feature;
@@ -194,7 +204,9 @@ function getNaturalEarthData() {
         });
     });
 }
-/** Fetch, parse, and organize sovereign countries from https://www.naturalearthdata.com/ by name */
+/**
+ * Fetch, parse, and organize Mexican states from https://www.naturalearthdata.com/ by name
+ */
 function getMexicanStates() {
     return __awaiter(this, void 0, void 0, function () {
         var naturalEarthResponse, naturalEarthBuffer, collection, result;
@@ -221,10 +233,13 @@ function getMexicanStates() {
         });
     });
 }
-// Transform the advisory data to have consistent names and the data we need
+/*
+ * Transform the advisory data to have consistent names and the data we need
+ */
 function transformData(advisories) {
     return advisories.map(function (advisory) {
         var name, level;
+        // This handles some unique cases
         if (advisory.title.startsWith("See State Summaries")) {
             name = "Mexico";
             level = advisory.title.split(" - ")[1];
