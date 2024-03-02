@@ -9,6 +9,7 @@ const ADVISORY_URL =
 const NATURAL_EARTH_URL = "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_0_countries.zip";
 const MEXICAN_STATES_URL = "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces.zip"
 
+// Map state department data to country and state name in shapefile data
 const LOOKUPS = {
   "Burma (Myanmar)": "Myanmar",
   "Eswatini": "eSwatini",
@@ -34,6 +35,7 @@ const MEXICO_LOOKUPS = {
   "Mexico State": "México",
 }
 
+// Map advisory level name to number
 const LEVEL_TEXT_TO_NUMBER = {
   "Exercise Normal Precautions": 1,
   "Exercise Increased Caution": 2,
@@ -41,6 +43,9 @@ const LEVEL_TEXT_TO_NUMBER = {
   "Do Not Travel": 4
 }
 
+/**
+ * Remove null characters in a string. Some strings in the shapefile data have null characters padding them out, so this takes care of those.
+ */
 function fix_null_string(s: string) {
   return s.replace(/\0/g, '').trim();
 }
@@ -57,6 +62,9 @@ async function getStateDepartmentData() {
   return advisories;
 }
 
+/** 
+ * Helper function to read a shapefile from a ZIP and build a GeoJSON feature collection.
+ */
 async function readShapefileZip(buffer: ArrayBuffer): Promise<FeatureCollection> {
   return await new Promise((resolve) => {
     // unzip file being downloaded
@@ -86,7 +94,9 @@ async function readShapefileZip(buffer: ArrayBuffer): Promise<FeatureCollection>
   });
 }
 
-/** Fetch, parse, and organize sovereign countries from https://www.naturalearthdata.com/ by name */
+/**
+ * Fetch, parse, and organize sovereign countries from https://www.naturalearthdata.com/ by name
+ */
 async function getNaturalEarthData() {
   const naturalEarthResponse = await fetch(NATURAL_EARTH_URL);
   const naturalEarthBuffer = await naturalEarthResponse.arrayBuffer();
@@ -112,7 +122,9 @@ async function getNaturalEarthData() {
   }, { name: {}, geounit: {}, sovereign: {} });
 }
 
-/** Fetch, parse, and organize sovereign countries from https://www.naturalearthdata.com/ by name */
+/**
+ * Fetch, parse, and organize Mexican states from https://www.naturalearthdata.com/ by name
+ */
 async function getMexicanStates() {
   const naturalEarthResponse = await fetch(MEXICAN_STATES_URL);
   const naturalEarthBuffer = await naturalEarthResponse.arrayBuffer();
@@ -126,10 +138,13 @@ async function getMexicanStates() {
   return result.reduce((obj, cur) => ({ [cur.properties?.name]: cur, ...obj }), {});
 }
 
-// Transform the advisory data to have consistent names and the data we need
+/*
+ * Transform the advisory data to have consistent names and the data we need
+ */
 function transformData(advisories: StateDepartmentAdvisory[]): Advisory[] {
   return advisories.map((advisory) => {
     let name, level;
+    // This handles some unique cases
     if (advisory.title.startsWith("See State Summaries")) {
       name = "Mexico";
       level = advisory.title.split(" - ")[1];
