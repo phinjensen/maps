@@ -70,6 +70,7 @@ async function onLoadPage() {
           '3false', 'pattern3',
           '3true', 'pattern3.5',
           '4false', 'pattern4',
+          '4true', 'pattern4',
           'none',
         ],
         'fill-opacity': 0.8,
