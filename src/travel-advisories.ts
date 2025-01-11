@@ -16,7 +16,11 @@ async function onLoadPage() {
     container: 'map',
     style: 'https://api.maptiler.com/maps/basic-v2/style.json?key=tCPs0pg6r8mncTKFtDd1', // stylesheet location
     center: [-5.35, 32.14],
-    zoom: 1
+    zoom: 1,
+    attributionControl: {
+      compact: true,
+      customAttribution: `<a href="https://cadatacatalog.state.gov/dataset/travel">Travel advisories</a> by the <a href="https://travel.state.gov/content/travel.html">Bureau of Consular Affairs</a>, licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>`
+    }
   });
 
   map.on('load', async () => {
