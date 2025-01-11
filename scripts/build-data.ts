@@ -148,16 +148,17 @@ function transformData(advisories: StateDepartmentAdvisory[]): Advisory[] {
     if (advisory.title.startsWith("See State Summaries")) {
       name = "Mexico";
       level = advisory.title.split(" - ")[1];
-    } else if (advisory.title.startsWith("See Summaries - Mainland China")) {
+    } else if (advisory.title.startsWith("Mainland China")) {
       name = "China";
       level = advisory.title.split(" - ")[2];
     } else if (advisory.title.startsWith("See Individual Summaries")) {
       name = "Israel";
-      level = advisory.title.split(" - ")[1];
+      level = "Level 3:"; // Currently doesn't have a level listed, but is 3/4
     } else {
       name = advisory.title.split(" - ")[0];
       level = advisory.title.split(" - ")[1];
     }
+    if (!level) { console.log(advisory.title, advisory.summary) }
     level = parseInt(level.replace(/Level (\d):.*/, "$1"));
     return {
       name,
@@ -182,10 +183,14 @@ Promise.all([
   for (let area of advisories) {
     let name = (LOOKUPS[area.name] || area.name).trim();
     if (name === "Mexico") {
+      // TODO: Stop parsing XML with regex.
       let stateSummarySection = area.summary.substring(area.summary.indexOf("<p><b><u>"));
-      let stateSummaries = stateSummarySection.replace(/\n/g, '').split("</p><p><b><u>");
+      let stateSummaries = stateSummarySection.replace(/<p[^<>]*>/, "<p>").replace(/\n/g, '').split(/<\/p>\s*<p[^<>]*>\s*<b>\s*<u>/);
       stateSummaries = stateSummaries.map(summary => {
-        let name = summary.split(/( state| \([A-Za-z ]+\))(\s|&nbsp;)– /)[0].replace("<p><b><u>", "");
+        let name = summary.split(/( state| \([A-Za-z ]+\))(\s|&nbsp;)– /)[0].replace(/<p[^<>]*><b><u>/, "").replace(/<a id="[\w\s]+"><\/a>/, "");
+        if (name.includes("Yucatan")) { // Yucatan has a bunch of extra info in the title, so we set it manually
+          name = "Yucatan";
+        }
         name = MEXICO_LOOKUPS[name] || name;
         let match = mexican_states[name];
         if (match) {
@@ -202,6 +207,10 @@ Promise.all([
         }
       });
       continue;
+    } else if (name === "Macau") {
+      name = "Macao S.A.R";
+    } else if (name === "Hong Kong") {
+      name = name + " S.A.R.";
     }
     // Look based on name first, then geounit, then sovereign
     // (matching only on sovereign can lead to e.g. tiny islands being chosen for Australia)
